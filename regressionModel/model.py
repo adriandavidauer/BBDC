@@ -13,6 +13,10 @@ import torch
 from torch.autograd import Variable
 import time
 from datetime import datetime
+from pathlib import Path
+
+my_file = Path("model.pt")
+
 from torch.nn.modules.module import Module
 
 class CAPELoss(Module):
@@ -28,13 +32,12 @@ class CAPELoss(Module):
 
 
 
-
 pandaData = pd.read_csv("../Aufgabenstellung/train.csv")
 numpyData = pandaData.values
 #convert timestamp to float
 numpyData[:,0] = list(map(lambda x: time.mktime(time.strptime(x, '%Y-%m-%d %H:%M:%S')),numpyData[:,0]))
 #Testing:
-# numpyData = numpyData[:100] #TODO: Uncomment!
+# numpyData = numpyData[:100] #TODO: comment!
 
 x = numpyData[:,:-1].astype(float)
 y = numpyData[:,-1].astype(float)
@@ -63,6 +66,7 @@ model = torch.nn.Sequential(
     torch.nn.Linear(H, D_out),
 )
 
+
 #Define loss_fn like this http://pytorch.org/docs/master/notes/extending.html
 #https://discuss.pytorch.org/t/solved-what-is-the-correct-way-to-implement-custom-loss-function/3568/4
 def loss_fn(y_pred, y):
@@ -79,6 +83,8 @@ def loss_fn(y_pred, y):
 # loss_fn = torch.nn.MSELoss(size_average=False) #TODO: Use correct lossfunction
 loss_fn = CAPELoss()
 
+if my_file.is_file():
+    model = torch.load(my_file)
 
 # Use the optim package to define an Optimizer that will update the weights of
 # the model for us. Here we will use Adam; the optim package contains many other
@@ -112,3 +118,6 @@ for t in range(500):
     # Calling the step function on an Optimizer makes an update to its
     # parameters
     optimizer.step()
+
+torch.save(model, my_file)
+print("saved model to {}".format(my_file))
