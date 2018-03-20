@@ -7,19 +7,38 @@
 
 
 
-
+import numpy as np
 import pandas as pd
 import torch
 from torch.autograd import Variable
 import time
 from datetime import datetime
+from torch.nn.modules.module import Module
+
+class CAPELoss(Module):
+    def __init__(self):
+        super(CAPELoss, self).__init__()
+
+    def forward(self, input, target):
+        basis = 122400.0
+        dif = (input - target).abs()
+        retval = dif.sum()/(len(dif) * basis)
+        return retval
+
+
+
+
 
 pandaData = pd.read_csv("../Aufgabenstellung/train.csv")
 numpyData = pandaData.values
 #convert timestamp to float
 numpyData[:,0] = list(map(lambda x: time.mktime(time.strptime(x, '%Y-%m-%d %H:%M:%S')),numpyData[:,0]))
+#Testing:
+# numpyData = numpyData[:100] #TODO: Uncomment!
+
 x = numpyData[:,:-1].astype(float)
 y = numpyData[:,-1].astype(float)
+
 
 # N is batch size; D_in is input dimension;
 # H is hidden dimension; D_out is output dimension.
@@ -43,7 +62,23 @@ model = torch.nn.Sequential(
     torch.nn.ReLU(),
     torch.nn.Linear(H, D_out),
 )
-loss_fn = torch.nn.MSELoss(size_average=False) #TODO: Use correct lossfunction
+
+#Define loss_fn like this http://pytorch.org/docs/master/notes/extending.html
+#https://discuss.pytorch.org/t/solved-what-is-the-correct-way-to-implement-custom-loss-function/3568/4
+def loss_fn(y_pred, y):
+    basis = 122400.0
+    dif = (y_pred.data - y.data).abs()
+    retval = dif.sum()/(len(dif) * basis)
+    return Variable(torch.FloatTensor([retval]), requires_grad = True)
+    # basis = 122400.0
+    # dif = np.absolute(y_pred.data.numpy() - y.data.numpy())
+    # retval = np.sum(dif) / (len(dif) * basis)
+    # print (retval)
+    # return Variable(torch.from_numpy(retval).type(dtype))
+
+# loss_fn = torch.nn.MSELoss(size_average=False) #TODO: Use correct lossfunction
+loss_fn = CAPELoss()
+
 
 # Use the optim package to define an Optimizer that will update the weights of
 # the model for us. Here we will use Adam; the optim package contains many other
@@ -57,8 +92,12 @@ for t in range(500):
 
     # Compute and print loss.
     loss = loss_fn(y_pred, y)
-    print(t, loss.data[0])
+    # print("loss.requires_grad: {}".format(loss.requires_grad))
+    # print("loss.grad: {}".format(loss.grad))
+    # print("loss.is_leaf: {}".format(loss.is_leaf))
+    # print("loss.grad_fn: {}".format(loss.grad_fn))
 
+    print(t, loss.data[0])
     # Before the backward pass, use the optimizer object to zero all of the
     # gradients for the variables it will update (which are the learnable
     # weights of the model). This is because by default, gradients are
