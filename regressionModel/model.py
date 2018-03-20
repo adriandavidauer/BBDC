@@ -25,9 +25,7 @@ class CAPELoss(Module):
 
     def forward(self, input, target):
         basis = 122400.0
-        dif = (input - target).abs()
-        retval = dif.sum()/(len(dif) * basis)
-        return retval
+        return (input - target).abs().sum()/(len(input) * basis)
 
 
 
