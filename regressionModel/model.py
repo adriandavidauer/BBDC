@@ -13,6 +13,10 @@ import torch
 from torch.autograd import Variable
 import time
 from datetime import datetime
+from pathlib import Path
+
+my_file = Path("model.pt")
+
 
 pandaData = pd.read_csv("../Aufgabenstellung/train.csv")
 numpyData = pandaData.values
@@ -43,6 +47,8 @@ model = torch.nn.Sequential(
     torch.nn.ReLU(),
     torch.nn.Linear(H, D_out),
 )
+if my_file.is_file():
+    model = torch.load("model.pt")
 loss_fn = torch.nn.MSELoss(size_average=False) #TODO: Use correct lossfunction
 
 # Use the optim package to define an Optimizer that will update the weights of
@@ -73,3 +79,5 @@ for t in range(500):
     # Calling the step function on an Optimizer makes an update to its
     # parameters
     optimizer.step()
+
+torch.save(model, "model.pt")
