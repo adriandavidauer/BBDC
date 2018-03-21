@@ -57,6 +57,9 @@ dtype = torch.FloatTensor
 x = Variable(torch.from_numpy(x).type(dtype))
 y = Variable(torch.from_numpy(y).type(dtype), requires_grad=False)
 
+#TODO: implement makeMiniBatchIndices(dataSetLength, batchSize) - returning List of lists containing the indices
+
+
 # Use the nn package to define our model and loss function.
 model = torch.nn.Sequential(
     torch.nn.Linear(D_in, H),
@@ -92,6 +95,7 @@ learning_rate = 1e-4
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 for t in range(500):
     # Forward pass: compute predicted y by passing x to the model.
+    #TODO: use makeMiniBatchIndices and loop over the indexLists (x[indices])
     y_pred = model(x)
 
     # Compute and print loss.
