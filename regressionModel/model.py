@@ -14,6 +14,7 @@ from torch.autograd import Variable
 import time
 from datetime import datetime
 from pathlib import Path
+from random import shuffle
 
 my_file = Path("model.pt")
 
@@ -58,6 +59,16 @@ x = Variable(torch.from_numpy(x).type(dtype))
 y = Variable(torch.from_numpy(y).type(dtype), requires_grad=False)
 
 #TODO: implement makeMiniBatchIndices(dataSetLength, batchSize) - returning List of lists containing the indices
+def makeMiniBatchIndices(dataSetLength, batchSize):
+    mixedList = list(range(dataSetLength))
+    shuffle(mixedList)
+    cuttedList = []
+    for i in range(0,dataSetLength, batchSize):
+        end = i+batchSize if i+batchSize < dataSetLength else dataSetLength
+        cuttedList.append(mixedList[i:end])
+    shuffle(cuttedList)
+    return cuttedList
+
 
 
 # Use the nn package to define our model and loss function.
@@ -94,32 +105,36 @@ if my_file.is_file():
 learning_rate = 1e-4
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 for t in range(500):
-    # Forward pass: compute predicted y by passing x to the model.
-    #TODO: use makeMiniBatchIndices and loop over the indexLists (x[indices])
-    y_pred = model(x)
+    indicesList = makeMiniBatchIndices(len(x), 500)
+    for indices in indicesList:
+        x_ = x[indices]
+        y_ = y[indices]
+        # Forward pass: compute predicted y by passing x to the model.
+        #TODO: use makeMiniBatchIndices and loop over the indexLists (x[indices])
+        y_pred = model(x_)
 
-    # Compute and print loss.
-    loss = loss_fn(y_pred, y)
-    # print("loss.requires_grad: {}".format(loss.requires_grad))
-    # print("loss.grad: {}".format(loss.grad))
-    # print("loss.is_leaf: {}".format(loss.is_leaf))
-    # print("loss.grad_fn: {}".format(loss.grad_fn))
+        # Compute and print loss.
+        loss = loss_fn(y_pred, y_)
+        # print("loss.requires_grad: {}".format(loss.requires_grad))
+        # print("loss.grad: {}".format(loss.grad))
+        # print("loss.is_leaf: {}".format(loss.is_leaf))
+        # print("loss.grad_fn: {}".format(loss.grad_fn))
 
-    print(t, loss.data[0])
-    # Before the backward pass, use the optimizer object to zero all of the
-    # gradients for the variables it will update (which are the learnable
-    # weights of the model). This is because by default, gradients are
-    # accumulated in buffers( i.e, not overwritten) whenever .backward()
-    # is called. Checkout docs of torch.autograd.backward for more details.
-    optimizer.zero_grad()
+        print(t, loss.data[0])
+        # Before the backward pass, use the optimizer object to zero all of the
+        # gradients for the variables it will update (which are the learnable
+        # weights of the model). This is because by default, gradients are
+        # accumulated in buffers( i.e, not overwritten) whenever .backward()
+        # is called. Checkout docs of torch.autograd.backward for more details.
+        optimizer.zero_grad()
 
-    # Backward pass: compute gradient of the loss with respect to model
-    # parameters
-    loss.backward()
+        # Backward pass: compute gradient of the loss with respect to model
+        # parameters
+        loss.backward()
 
-    # Calling the step function on an Optimizer makes an update to its
-    # parameters
-    optimizer.step()
+        # Calling the step function on an Optimizer makes an update to its
+        # parameters
+        optimizer.step()
 
 torch.save(model, my_file)
 print("saved model to {}".format(my_file))
